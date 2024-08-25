@@ -1,8 +1,8 @@
 import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
 import { Icon } from 'react-native-elements';
-import { getProducts } from '../api';
 import { CartContext } from './CartContext'; 
+import { getProductsFromJson, syncProducts } from '../api';
 
 export default function HomeScreen({ navigation }) {
   const { cart, addToCart, resetCart } = useContext(CartContext);
@@ -10,24 +10,24 @@ export default function HomeScreen({ navigation }) {
   const [groceriesData, setGroceriesData] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        const response = await getProducts();
-        console.log('API Response:', response);
-        if (response && Array.isArray(response.products)) {
-          setGroceriesData(response.products);
-        } else {
-          console.error('Unexpected response format:', response);
-          setGroceriesData([]);
-        }
-      } catch (error) {
-        console.error('Failed to fetch products:', error);
+  const fetchProducts = async () => {
+    try {
+      const data = await getProductsFromJson();
+      if (data && Array.isArray(data.products)) {
+        setGroceriesData(data.products);
+      } else {
+        console.error('Unexpected response format:', data);
         setGroceriesData([]);
-      } finally {
-        setLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('Failed to fetch products:', error);
+      setGroceriesData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchProducts();
   }, []);
 
@@ -35,45 +35,81 @@ export default function HomeScreen({ navigation }) {
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#007BFF" />
-      </View>
-    );
-  }
+  const categorizedProducts = filteredGroceries.reduce((acc, product) => {
+    if (!acc[product.category]) {
+      acc[product.category] = [];
+    }
+    if (acc[product.category].length < 10) {
+      acc[product.category].push(product);
+    }
+    return acc;
+  }, {});
 
   return (
     <View style={styles.container}>
       <View style={styles.headerMain}>
         <Text style={styles.header}>PesaTrack</Text>
         <Text style={styles.subtitle}>Your one-stop shop for all products!</Text>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search products..."
-          placeholderTextColor="#ffeefe"
-          value={searchTerm}
-          onChangeText={setSearchTerm}
-        />
+        <View style={styles.searchContainer}>
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search products..."
+            placeholderTextColor="#000"
+            value={searchTerm}
+            onChangeText={setSearchTerm}
+          />
+          {searchTerm.length > 0 && (
+            <TouchableOpacity onPress={() => setSearchTerm('')}>
+              <Icon name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
+        </View>
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity
+            style={styles.syncButton}
+            onPress={async () => {
+              await syncProducts();
+              // Re-fetch products after syncing
+              fetchProducts();
+            }}
+          >
+            <Icon name="sync" size={24} color="#fff" />
+            <Text style={styles.syncButtonText}>Sync Products</Text>
+          </TouchableOpacity>
+        </View>
+
       </View>
 
-      <FlatList
-        data={filteredGroceries}
-        style={styles.itemsBody}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <View style={styles.groceryItem}>
-            <Image source={{ uri: item.image_url }} style={styles.groceryImage} />
-            <View style={styles.groceryDetails}>
-              <Text style={styles.groceryName}>{item.name}</Text>
-              <Text style={styles.groceryPrice}>{item.price}</Text>
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007BFF" />
+        </View>
+      ) : (
+        <ScrollView style={styles.itemsBody}>
+          {Object.keys(categorizedProducts).map((category, index) => (
+            <View key={index} style={styles.categorySection}>
+              <Text style={styles.categoryTitle}>{category}</Text>
+              <FlatList
+                data={categorizedProducts[category]}
+                horizontal
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={({ item }) => (
+                  <View style={styles.shopItem}>
+                    <Image source={{ uri: "https://via.placeholder.com/100" }} style={styles.groceryImage} />
+                    <View style={styles.groceryDetails}>
+                      <Text style={styles.groceryName}>{item.name}</Text>
+                      <Text style={styles.groceryPrice}>{item.price}</Text>
+                    </View>
+                    <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item)}>
+                      <Icon name="add-shopping-cart" size={24} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                )}
+              />
             </View>
-            <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item)}>
-              <Icon name="add-shopping-cart" size={24} color="#fff" />
-            </TouchableOpacity>
-          </View>
-        )}
-      />
+          ))}
+        </ScrollView>
+      )}
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
@@ -99,35 +135,64 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   headerMain: {
-    paddingTop: 40,
+    paddingTop: 50,
     backgroundColor: '#007BFF',
     width: '100%',
     paddingHorizontal: 20,
   },
   header: {
-    fontSize: 30,
+    fontSize: 40,
     fontWeight: 'bold',
-    marginBottom: 10,
+    marginBottom: 2,
     color: '#fff',
   },
   subtitle: {
     fontSize: 16,
-    marginBottom: 20,
+    marginBottom: 10,
     color: '#ffeefe',
   },
-  searchInput: {
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     borderColor: '#ccc',
     borderWidth: 1,
     borderRadius: 10,
+    backgroundColor: '#fff',
     padding: 10,
+    marginBottom: 1,
+  },
+  searchInput: {
+    flex: 1,
     fontSize: 16,
+    color: '#000',
+  },
+  syncButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000',
+    borderWidth: 1,
+    borderColor: '#fff',
+    padding: 10,
+    borderRadius: 5,
     marginBottom: 20,
-    color: '#ffeefe',
+  },
+  syncButtonText: {
+    color: '#fff',
+    marginLeft: 10,
+  },  
+  categorySection: {
+    marginBottom: 20,
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+    marginLeft: 10,
   },
   itemsBody: {
     padding: 20,
   },
-  groceryItem: {
+  shopItem: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
@@ -135,6 +200,7 @@ const styles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 10,
     marginBottom: 10,
+    marginHorizontal: 1,
   },
   groceryImage: {
     width: 60,
@@ -180,6 +246,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   resetButton: {
-    backgroundColor: '#FF6347',
+    backgroundColor: '#0004',
   },
 });

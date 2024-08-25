@@ -1,6 +1,7 @@
 import React, { useContext, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Image, Modal, TextInput, StyleSheet } from 'react-native';
 import { CartContext } from './CartContext'; 
+
 export default function CartScreen({ route, navigation }) {
   const { cart, resetCart } = useContext(CartContext);
   const [cartItems, setCartItems] = useState(cart);
@@ -31,8 +32,19 @@ export default function CartScreen({ route, navigation }) {
     setCartItems(updatedCartItems);
   };
 
+  const parsePrice = (price) => {
+    if (typeof price === 'string') {
+      // Removes non-numeric characters and parse to float
+      return parseFloat(price.replace(/[^0-9.]/g, '') || '0');
+    }
+    return parseFloat(price || '0');
+  };
+
   const getTotal = () => {
-    return cartItems.reduce((total, item) => total + (item.price.replace('Kshs. ', '') * (item.quantity || 1)), 0);
+    return cartItems.reduce((total, item) => {
+      const price = parsePrice(item.price);
+      return total + (price * (item.quantity || 1));
+    }, 0);
   };
 
   const handlePayWithCash = () => {
@@ -64,7 +76,7 @@ export default function CartScreen({ route, navigation }) {
     <View style={styles.container}>
       <FlatList
         data={cartItems}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.id.toString()}
         renderItem={({ item }) => (
           <View style={styles.cartItem}>
             <Image
@@ -74,7 +86,7 @@ export default function CartScreen({ route, navigation }) {
 
             <View style={styles.cartItemDetails}>
               <Text style={styles.cartItemName}>{item.name}</Text>
-              <Text style={styles.cartItemPrice}>{item.price}</Text>
+              <Text style={styles.cartItemPrice}>Kshs. {item.price}</Text>
               <View style={styles.quantityContainer}>
                 <TouchableOpacity onPress={() => decrementQuantity(item)} style={styles.quantityButton}>
                   <Text style={styles.quantityButtonText}>-</Text>
@@ -92,7 +104,7 @@ export default function CartScreen({ route, navigation }) {
         )}
       />
       <View style={styles.totalContainer}>
-        <Text style={styles.totalText}>Total: Kshs. {getTotal()}</Text>
+        <Text style={styles.totalText}>Total: Kshs. {getTotal().toFixed(2)}</Text>
         <TouchableOpacity style={styles.checkoutButton} onPress={() => setPaymentModalVisible(true)}>
           <Text style={styles.checkoutButtonText}>Proceed to Checkout</Text>
         </TouchableOpacity>
@@ -111,15 +123,15 @@ export default function CartScreen({ route, navigation }) {
                 <Text style={styles.summaryText}>Checkout Summary</Text>
                 <FlatList
                   data={cartItems}
-                  keyExtractor={(item) => item.id}
+                  keyExtractor={(item) => item.id.toString()}
                   renderItem={({ item }) => (
                     <View style={styles.summaryItem}>
                       <Text style={styles.summaryItemText}>{item.name} x {item.quantity || 1}</Text>
-                      <Text style={styles.summaryItemText}>{item.price}</Text>
+                      <Text style={styles.summaryItemText}>Kshs. {item.price}</Text>
                     </View>
                   )}
                 />
-                <Text style={styles.summaryTotalText}>Total: Kshs. {getTotal()}</Text>
+                <Text style={styles.summaryTotalText}>Total: Kshs. {getTotal().toFixed(2)}</Text>
                 <TouchableOpacity style={styles.paymentButton} onPress={handlePayWithCash}>
                   <Text style={styles.paymentButtonText}>Pay with Cash</Text>
                 </TouchableOpacity>
@@ -137,7 +149,7 @@ export default function CartScreen({ route, navigation }) {
                   onChangeText={handleAmountReceivedChange}
                 />
                 {balance !== null && (
-                  <Text style={styles.balanceText}>Balance: Kshs. {balance}</Text>
+                  <Text style={styles.balanceText}>Balance: Kshs. {balance.toFixed(2)}</Text>
                 )}
                 <TouchableOpacity style={styles.completeButton} onPress={handleCompletePurchase}>
                   <Text style={styles.completeButtonText}>Complete Purchase</Text>
