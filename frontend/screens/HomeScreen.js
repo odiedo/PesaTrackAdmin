@@ -69,7 +69,6 @@ export default function HomeScreen({ navigation }) {
             style={styles.syncButton}
             onPress={async () => {
               await syncProducts();
-              // Re-fetch products after syncing
               fetchProducts();
             }}
           >

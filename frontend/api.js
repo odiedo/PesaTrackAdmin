@@ -9,8 +9,9 @@ export const getProductsFromJson = async () => {
     } catch (error) {
       console.error('Error fetching products from JSON:', error);
       return { products: [] };
-    }
+    } 
   };
+
 export const syncProducts = async () => {
   try {
     const response = await fetch(`${API_URL}sync-products`, {

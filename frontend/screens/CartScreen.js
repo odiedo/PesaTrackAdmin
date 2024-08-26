@@ -159,7 +159,6 @@ export default function CartScreen({ route, navigation }) {
           </View>
         </View>
       </Modal>
-
       {successMessageVisible && (
         <Modal
           animationType="slide"
