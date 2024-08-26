@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { Icon } from 'react-native-elements';
 const SignUpScreen = ({ navigation }) => {
   const [name, setName] = useState('');
@@ -44,7 +44,9 @@ const SignUpScreen = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-        <Text style={styles.header}>Sign Up</Text>
+        <View style={styles.headerCover}>
+            <Text style={styles.headerMain}>Sign up</Text>
+        </View>
         <TextInput
             style={styles.input}
             placeholder="Name"
@@ -111,12 +113,23 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f9f9f9',
   },
-  header: {
-    fontSize: 32,
-    fontWeight: 'bold',
+  headerCover: {
+    width: '100%',
+    height: 60,
+    borderRadius: 50,
+    backgroundColor: '#0008',
+    left: '-60%',
     marginBottom: 10,
-    color: '#333',
   },
+  headerMain: {
+    textAlign: 'right',
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    fontWeight: 'bold',
+    fontSize: 32,
+    color: '#fff',
+  },
+
   input: {
     borderColor: '#ccc',
     borderWidth: 1,

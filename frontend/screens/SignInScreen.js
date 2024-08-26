@@ -41,7 +41,13 @@ export default function SignInScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.header}>Sign In</Text>
+      {/* <View style={styles.circles}></View> */}
+      <View style={styles.titleMain}>
+        <Text style={styles.header}>PesaTrack</Text>
+      </View>
+      <View style={styles.headerCover}>
+        <Text style={styles.headerMain}>Sign In</Text>
+      </View>
       <Text style={styles.subtitle}>Enter your email and password</Text>
       <TextInput
         style={styles.input}
@@ -59,6 +65,7 @@ export default function SignInScreen({ navigation }) {
         onChangeText={setPassword}
         secureTextEntry
       />
+
       <TouchableOpacity style={styles.button} onPress={handleSignIn} disabled={loading}>
         {loading ? (
           <Icon name="spinner" size={24} color="#fff" type="font-awesome" />
@@ -83,11 +90,31 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f9f9f9',
   },
+  headerCover: {
+    width: '100%',
+    height: 60,
+    borderRadius: 50,
+    backgroundColor: '#0008',
+    right: '-55%',
+    marginBottom: 10,
+  },
+  headerMain: {
+    textAlign: 'left',
+    paddingHorizontal: 20,
+    paddingVertical: 5,
+    fontWeight: 'bold',
+    fontSize: 32,
+    color: '#fff',
+  },
+  titleMain: {
+    
+  },
   header: {
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 10,
     color: '#333',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
@@ -101,6 +128,7 @@ const styles = StyleSheet.create({
     padding: 10,
     marginBottom: 15,
     fontSize: 16,
+    color: '#000',
     backgroundColor: '#fff',
   },
   button: {
