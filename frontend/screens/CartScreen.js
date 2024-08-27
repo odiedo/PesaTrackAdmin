@@ -61,15 +61,38 @@ export default function CartScreen({ route, navigation }) {
     }
   };
 
-  const handleCompletePurchase = () => {
-    setPaymentModalVisible(false);
-    setSuccessMessageVisible(true);
-    setCartItems([]);
-    resetCart();
-    setTimeout(() => {
-      setSuccessMessageVisible(false);
-      navigation.navigate('Home');
-    }, 2000);
+  const handleCompletePurchase = async () => {
+    try {
+      const purchaseItems = cartItems.map(item => ({
+        id: item.id,
+        quantity: item.quantity || 1,
+        price: parseFloat(item.price),
+      }));
+
+      const response = await fetch('http://192.168.100.20:5000/completePurchase', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ purchaseItems }),
+      });
+
+      if (response.ok) {
+        setPaymentModalVisible(false);
+        setSuccessMessageVisible(true);
+        setCartItems([]); 
+        resetCart();
+
+        setTimeout(() => {
+          setSuccessMessageVisible(false);
+          navigation.navigate('Home');
+        }, 2000);
+      } else {
+        console.error('Failed to complete purchase');
+      }
+    } catch (error) {
+      console.error('Error completing purchase:', error);
+    }
   };
 
   return (

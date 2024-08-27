@@ -5,6 +5,7 @@ import json
 import os
 from decimal import Decimal
 import bcrypt
+import uuid
 
 app = Flask(__name__)
 CORS(app)
@@ -30,6 +31,9 @@ def decimal_to_float(data):
     elif isinstance(data, list):
         return [decimal_to_float(i) for i in data]
     return data
+def generate_customer_number():
+    # Generate a unique customer number
+    return str(uuid.uuid4())
 
 @app.route('/sync-products', methods=['POST'])
 def sync_products():
@@ -46,7 +50,7 @@ def sync_products():
         # Convert Decimal values to float
         products = decimal_to_float(products)
 
-        # Path to the JSON file
+        # JSON file path
         json_file_path = os.path.join(os.path.dirname(__file__), 'products.json')
 
         # Write the data to the JSON file
@@ -150,6 +154,101 @@ def sign_in():
         return jsonify({'error': f"Database error: {str(db_err)}"}), 500
     except Exception as e:
         return jsonify({'error': f"Unexpected error: {str(e)}"}), 500   
+
+@app.route('/completePurchase', methods=['POST'])
+def complete_purchase():
+    data = request.get_json()
+    
+    if not data or 'purchaseItems' not in data:
+        return jsonify({'error': 'Invalid request'}), 400
+
+    purchase_items = data['purchaseItems']
+    
+    try:
+        customer_number = generate_customer_number()
+
+        db = get_db_connection()
+        cursor = db.cursor()
+
+        # Begin a transaction
+        cursor.execute("START TRANSACTION")
+
+        for item in purchase_items:
+            cursor.execute(
+                'INSERT INTO purchases (item_id, quantity, price, customer_number) VALUES (%s, %s, %s, %s)',
+                (item['id'], item['quantity'], item['price'], customer_number)
+            )
+
+        db.commit()  
+        cursor.close()
+        db.close()
+
+        return jsonify({'status': 'success', 'customer_number': customer_number}), 200
+
+    except mysql.connector.Error as err:
+        print(f"Error: {err}")  
+        return jsonify({'error': 'Database error'}), 500
+
+    except Exception as e:
+        print(f"Error: {e}")  
+        return jsonify({'error': 'Internal server error'}), 500
+
+@app.route('/recent-sales', methods=['GET'])
+def recent_sales():
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+
+        # get distinct customer numbers with the total number of items purchased
+        cursor.execute("""
+            SELECT customer_number, COUNT(*) as total_items, SUM(price * quantity) as total_amount
+            FROM purchases
+            GROUP BY customer_number
+            ORDER BY customer_number DESC
+            LIMIT 20
+        """)
+        recent_sales = cursor.fetchall()
+
+        # Convert Decimal values to float
+        recent_sales = decimal_to_float(recent_sales)
+
+        cursor.close()
+        db.close()
+
+        return jsonify(recent_sales), 200
+    except mysql.connector.Error as db_err:
+        return jsonify({'error': f"Database error: {str(db_err)}"}), 500
+    except Exception as e:
+        return jsonify({'error': f"Unexpected error: {str(e)}"}), 500
+
+@app.route('/sales-details/<customer_number>', methods=['GET'])
+def sales_details(customer_number):
+    try:
+        db = get_db_connection()
+        cursor = db.cursor(dictionary=True)
+
+        # get all items for the given customer number
+        cursor.execute("""
+            SELECT p.item_id, p.quantity, p.price, prod.name as product_name
+            FROM purchases p
+            JOIN products prod ON p.item_id = prod.id
+            WHERE p.customer_number = %s
+        """, (customer_number,))
+        sales_details = cursor.fetchall()
+
+        # Convert Decimal values to float
+        sales_details = decimal_to_float(sales_details)
+
+        cursor.close()
+        db.close()
+
+        return jsonify(sales_details), 200
+    except mysql.connector.Error as db_err:
+        return jsonify({'error': f"Database error: {str(db_err)}"}), 500
+    except Exception as e:
+        return jsonify({'error': f"Unexpected error: {str(e)}"}), 500
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

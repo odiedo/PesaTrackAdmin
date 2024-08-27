@@ -18,7 +18,7 @@ const SignUpScreen = ({ navigation }) => {
         return;
     }
 
-    fetch('http://192.168.1.25:5000/sign-up', {
+    fetch('http://192.168.100.20:5000/sign-up', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ name, id_number: idNumber, phone, email, password }),
@@ -97,7 +97,7 @@ const SignUpScreen = ({ navigation }) => {
             )}
         </TouchableOpacity>
         <View style={styles.footer}>
-            <Text style={styles.footerText}>Already have an account?</Text>
+            <Text style={styles.footerText}>Already have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Signin')}>
             <Text style={styles.footerLink}>Sign In</Text>
             </TouchableOpacity>

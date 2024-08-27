@@ -10,7 +10,6 @@ import SettingsScreen from './screens/SettingsScreen';
 import SignInScreen from './screens/SignInScreen'
 import SignUpScreen from './screens/SignUpScreen';
 const Stack = createStackNavigator();
-
 export default function App() {
   return (
     <CartProvider>

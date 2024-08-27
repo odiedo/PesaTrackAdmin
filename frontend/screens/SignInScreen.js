@@ -16,7 +16,7 @@ export default function SignInScreen({ navigation }) {
         return;
       }
 
-      const response = await fetch('http://192.168.1.25:5000/sign-in', {
+      const response = await fetch('http://192.168.100.20:5000/sign-in', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,7 +41,6 @@ export default function SignInScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      {/* <View style={styles.circles}></View> */}
       <View style={styles.titleMain}>
         <Text style={styles.header}>PesaTrack</Text>
       </View>
@@ -105,9 +104,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 32,
     color: '#fff',
-  },
-  titleMain: {
-    
   },
   header: {
     fontSize: 32,

@@ -60,23 +60,10 @@ export default function HomeScreen({ navigation }) {
           />
           {searchTerm.length > 0 && (
             <TouchableOpacity onPress={() => setSearchTerm('')}>
-              <Icon name="close" size={24} color="#fff" />
+              <Icon name="close" size={24} color="#000" />
             </TouchableOpacity>
           )}
         </View>
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity
-            style={styles.syncButton}
-            onPress={async () => {
-              await syncProducts();
-              fetchProducts();
-            }}
-          >
-            <Icon name="sync" size={24} color="#fff" />
-            <Text style={styles.syncButtonText}>Sync Products</Text>
-          </TouchableOpacity>
-        </View>
-
       </View>
 
       {loading ? (
@@ -110,19 +97,35 @@ export default function HomeScreen({ navigation }) {
         </ScrollView>
       )}
 
-      <View style={styles.buttonContainer}>
+      <View style={styles.navBar}>
         <TouchableOpacity
-          style={[styles.cartButton, styles.resetButton]}
-          onPress={resetCart}
+          style={styles.navItem}
+          onPress={async () => {
+            await syncProducts();
+            fetchProducts();
+          }}
         >
-          <Icon name="refresh" size={24} color="#fff" />
+          <Icon name="sync" size={24} color="#fff" />
+          <Text style={styles.navText}>Sync</Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          style={styles.cartButton}
-          onPress={() => navigation.navigate('Cart')}
-        >
+        <TouchableOpacity style={styles.navItem} onPress={resetCart}>
+          <Icon name="refresh" size={24} color="#fff" />
+          <Text style={styles.navText}>Reset</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Cart')}>
           <Icon name="shopping-cart" size={24} color="#fff" />
-          <Text style={styles.cartButtonText}>View Cart ({cart.length})</Text>
+          <View style={styles.cartBadge}>
+            <Text style={styles.cartBadgeText}>{cart.length}</Text>
+          </View>
+          <Text style={styles.navText}>Cart</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('OrderHistory')}>
+          <Icon name="receipt" size={24} color="#fff" />
+          <Text style={styles.navText}>Recent Sales</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+          <Icon name="home" size={24} color="#fff" />
+          <Text style={styles.navText}>Home</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -132,6 +135,7 @@ export default function HomeScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: '#f9f9f9',
   },
   headerMain: {
     paddingTop: 50,
@@ -158,27 +162,44 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#fff',
     padding: 10,
-    marginBottom: 1,
+    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#000',
   },
-  syncButton: {
+  navBar: {
     flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#000',
-    borderWidth: 1,
-    borderColor: '#fff',
-    padding: 10,
-    borderRadius: 5,
-    marginBottom: 20,
+    justifyContent: 'space-around',
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+    borderTopWidth: 1,
+    borderColor: '#ccc',
   },
-  syncButtonText: {
+  navItem: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flex: 1,
+  },
+  navText: {
     color: '#fff',
-    marginLeft: 10,
-  },  
+    fontSize: 12,
+    marginTop: 2,
+  },
+  cartBadge: {
+    position: 'absolute',
+    right: 8,
+    top: -5,
+    backgroundColor: 'red',
+    borderRadius: 10,
+    paddingHorizontal: 5,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
   categorySection: {
     marginBottom: 20,
   },
@@ -222,29 +243,5 @@ const styles = StyleSheet.create({
     backgroundColor: '#007BFF',
     padding: 10,
     borderRadius: 10,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 10,
-    marginTop: 20,
-  },
-  cartButton: { 
-    backgroundColor: '#007BFF',
-    padding: 15,
-    marginHorizontal: 2,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  cartButtonText: {
-    color: '#fff',
-    marginLeft: 10,
-    fontSize: 16,
-  },
-  resetButton: {
-    backgroundColor: '#0004',
   },
 });
