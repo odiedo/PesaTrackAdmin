@@ -2,9 +2,8 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { CartProvider } from './screens/CartContext'; 
-import HomeScreen from './screens/HomeScreen';
 import SignInScreen from './screens/SignInScreen'
-import SignUpScreen from './screens/SignUpScreen';
+import ResetPasswordScreen from './screens/ResetPasswordScreen';
 import DashboardScreen from './screens/DashboardScreen';
 import SalesAnalyticsScreen from './screens/SalesAnalyticsScreen';
 import MonthlySalesScreen from './screens/MonthlySalesScreen';
@@ -17,9 +16,9 @@ export default function App() {
   return (
     <CartProvider>
       <NavigationContainer>
-        <Stack.Navigator initialRouteName="Dashboard">  
+        <Stack.Navigator initialRouteName="Signin">  
           <Stack.Screen name="Signin" component={SignInScreen} options={{headerShown: false}} />
-          <Stack.Screen name="SignUp" component={SignUpScreen} options={{headerShown: false}} />
+          <Stack.Screen name="Reset" component={ResetPasswordScreen} options={{headerShown: false}} />
           <Stack.Screen name="Dashboard" component={DashboardScreen} options={{headerShown: false}} />
           <Stack.Screen name="SalesAnalytics" component={SalesAnalyticsScreen} options={{headerShown: false}}  />
           <Stack.Screen name="MonthlySales" component={MonthlySalesScreen} options={{headerShown: false}} />
