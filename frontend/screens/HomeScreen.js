@@ -1,59 +1,46 @@
-import React, { useContext, useState, useEffect } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, Image, StyleSheet, ScrollView, Alert } from 'react-native';
 import { Icon } from 'react-native-elements';
-import { CartContext } from './CartContext'; 
-import { getProductsFromJson, syncProducts } from '../api';
 
-export default function HomeScreen({ navigation }) {
-  const { cart, addToCart, resetCart } = useContext(CartContext);
+export default function AdminDashboard() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [groceriesData, setGroceriesData] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchProducts = async () => {
-    try {
-      const data = await getProductsFromJson();
-      if (data && Array.isArray(data.products)) {
-        setGroceriesData(data.products);
-      } else {
-        console.error('Unexpected response format:', data);
-        setGroceriesData([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch products:', error);
-      setGroceriesData([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Dummy inventory data
+  const inventoryData = [
+    { id: 1, name: 'Apple iPhone 14', price: '999', image: 'https://dummyimage.com/60x60/000/fff' },
+    { id: 2, name: 'MacBook Pro 16"', price: '2499', image: 'https://dummyimage.com/60x60/000/fff' },
+    { id: 3, name: 'AirPods Pro', price: '249', image: 'https://dummyimage.com/60x60/000/fff' },
+  ];
 
-  useEffect(() => {
-    fetchProducts();
-  }, []);
+  // Dummy sales report data
+  const salesReport = [
+    { date: '2024-09-01', totalSales: '5000' },
+    { date: '2024-09-02', totalSales: '6200' },
+    { date: '2024-09-03', totalSales: '7100' },
+  ];
 
-  const filteredGroceries = groceriesData.filter(item =>
+  // Dummy user management data
+  const users = [
+    { name: 'John Doe', role: 'Admin' },
+    { name: 'Jane Smith', role: 'Cashier' },
+    { name: 'Michael Brown', role: 'Manager' },
+  ];
+
+  // Filtered inventory data
+  const filteredInventory = inventoryData.filter(item =>
     item.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const categorizedProducts = filteredGroceries.reduce((acc, product) => {
-    if (!acc[product.category]) {
-      acc[product.category] = [];
-    }
-    if (acc[product.category].length < 10) {
-      acc[product.category].push(product);
-    }
-    return acc;
-  }, {});
-
   return (
     <View style={styles.container}>
+      {/* Header */}
       <View style={styles.headerMain}>
-        <Text style={styles.header}>PesaTrack</Text>
-        <Text style={styles.subtitle}>Your one-stop shop for all products!</Text>
+        <Text style={styles.header}>Admin Dashboard</Text>
+        <Text style={styles.subtitle}>Manage Inventory, Sales, and Users</Text>
         <View style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search products..."
+            placeholder="Search inventory..."
             placeholderTextColor="#000"
             value={searchTerm}
             onChangeText={setSearchTerm}
@@ -66,66 +53,72 @@ export default function HomeScreen({ navigation }) {
         </View>
       </View>
 
-      {loading ? (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#007BFF" />
+      <ScrollView style={styles.dashboardBody}>
+        {/* Inventory Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Inventory Management</Text>
+          <FlatList
+            data={filteredInventory}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={styles.inventoryItem}>
+                <Image source={{ uri: item.image }} style={styles.productImage} />
+                <View style={styles.productDetails}>
+                  <Text style={styles.productName}>{item.name}</Text>
+                  <Text style={styles.productPrice}>${item.price}</Text>
+                </View>
+              </View>
+            )}
+          />
         </View>
-      ) : (
-        <ScrollView style={styles.itemsBody}>
-          {Object.keys(categorizedProducts).map((category, index) => (
-            <View key={index} style={styles.categorySection}>
-              <Text style={styles.categoryTitle}>{category}</Text>
-              <FlatList
-                data={categorizedProducts[category]}
-                horizontal
-                keyExtractor={(item) => item.id.toString()}
-                renderItem={({ item }) => (
-                  <View style={styles.shopItem}>
-                    <Image source={{ uri: "https://via.placeholder.com/100" }} style={styles.groceryImage} />
-                    <View style={styles.groceryDetails}>
-                      <Text style={styles.groceryName}>{item.name}</Text>
-                      <Text style={styles.groceryPrice}>{item.price}</Text>
-                    </View>
-                    <TouchableOpacity style={styles.addButton} onPress={() => addToCart(item)}>
-                      <Icon name="add-shopping-cart" size={24} color="#fff" />
-                    </TouchableOpacity>
-                  </View>
-                )}
-              />
+
+        {/* Sales Report */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Sales Report</Text>
+          {salesReport.map((report, index) => (
+            <View key={index} style={styles.reportItem}>
+              <Text style={styles.reportText}>
+                {report.date}: ${report.totalSales} in sales
+              </Text>
             </View>
           ))}
-        </ScrollView>
-      )}
+        </View>
 
+        {/* User Management */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>User Management</Text>
+          {users.map((user, index) => (
+            <View key={index} style={styles.userItem}>
+              <Text style={styles.userName}>{user.name}</Text>
+              <Text style={styles.userRole}>{user.role}</Text>
+              <TouchableOpacity
+                style={styles.userActionButton}
+                onPress={() => Alert.alert('User Action', `Manage ${user.name}`)}
+              >
+                <Text style={styles.userActionText}>Manage</Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+      </ScrollView>
+
+      {/* Bottom Navigation */}
       <View style={styles.navBar}>
-        <TouchableOpacity
-          style={styles.navItem}
-          onPress={async () => {
-            await syncProducts();
-            fetchProducts();
-          }}
-        >
-          <Icon name="sync" size={24} color="#fff" />
-          <Text style={styles.navText}>Sync</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={resetCart}>
-          <Icon name="refresh" size={24} color="#fff" />
-          <Text style={styles.navText}>Reset</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Cart')}>
-          <Icon name="shopping-cart" size={24} color="#fff" />
-          <View style={styles.cartBadge}>
-            <Text style={styles.cartBadgeText}>{cart.length}</Text>
-          </View>
-          <Text style={styles.navText}>Cart</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('OrderHistory')}>
-          <Icon name="receipt" size={24} color="#fff" />
-          <Text style={styles.navText}>Recent Sales</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.navItem} onPress={() => navigation.navigate('Home')}>
+        <TouchableOpacity style={styles.navItem}>
           <Icon name="home" size={24} color="#fff" />
-          <Text style={styles.navText}>Home</Text>
+          <Text style={styles.navText}>Dashboard</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Icon name="bar-chart" size={24} color="#fff" />
+          <Text style={styles.navText}>Reports</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Icon name="inventory" size={24} color="#fff" />
+          <Text style={styles.navText}>Inventory</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.navItem}>
+          <Icon name="people" size={24} color="#fff" />
+          <Text style={styles.navText}>Users</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -140,19 +133,19 @@ const styles = StyleSheet.create({
   headerMain: {
     paddingTop: 50,
     backgroundColor: '#007BFF',
-    width: '100%',
     paddingHorizontal: 20,
   },
   header: {
-    fontSize: 40,
+    fontSize: 36,
     fontWeight: 'bold',
-    marginBottom: 2,
     color: '#fff',
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 16,
+    color: '#e0e0e0',
+    textAlign: 'center',
     marginBottom: 10,
-    color: '#ffeefe',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -162,86 +155,94 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     backgroundColor: '#fff',
     padding: 10,
-    marginBottom: 20,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
     color: '#000',
   },
-  navBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#007BFF',
-    paddingVertical: 10,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-  },
-  navItem: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-  },
-  navText: {
-    color: '#fff',
-    fontSize: 12,
-    marginTop: 2,
-  },
-  cartBadge: {
-    position: 'absolute',
-    right: 8,
-    top: -5,
-    backgroundColor: 'red',
-    borderRadius: 10,
-    paddingHorizontal: 5,
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 10,
-    fontWeight: 'bold',
-  },
-  categorySection: {
-    marginBottom: 20,
-  },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    marginLeft: 10,
-  },
-  itemsBody: {
+  dashboardBody: {
     padding: 20,
   },
-  shopItem: {
+  section: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  inventoryItem: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 10,
     padding: 10,
+    backgroundColor: '#fff',
+    borderRadius: 10,
     borderWidth: 1,
     borderColor: '#ccc',
-    borderRadius: 10,
-    marginBottom: 10,
-    marginHorizontal: 1,
   },
-  groceryImage: {
+  productImage: {
     width: 60,
     height: 60,
     borderRadius: 10,
     marginRight: 10,
   },
-  groceryDetails: {
+  productDetails: {
     flex: 1,
   },
-  groceryName: {
+  productName: {
     fontSize: 16,
     fontWeight: 'bold',
   },
-  groceryPrice: {
+  productPrice: {
     fontSize: 14,
     color: '#666',
   },
-  addButton: {
-    backgroundColor: '#007BFF',
+  reportItem: {
     padding: 10,
-    borderRadius: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  reportText: {
+    fontSize: 14,
+    color: '#333',
+  },
+  userItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#ccc',
+  },
+  userName: {
+    flex: 1,
+    fontSize: 16,
+  },
+  userRole: {
+    fontSize: 14,
+    color: '#666',
+  },
+  userActionButton: {
+    backgroundColor: '#007BFF',
+    padding: 8,
+    borderRadius: 5,
+  },
+  userActionText: {
+    color: '#fff',
+  },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#007BFF',
+    paddingVertical: 10,
+  },
+  navItem: {
+    alignItems: 'center',
+  },
+  navText: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 2,
   },
 });
