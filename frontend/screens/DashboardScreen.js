@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,25 +13,59 @@ const AdminDashboardScreen = ({ navigation }) => {
   const [dailySalesData, setDailySalesData] = useState([0, 0, 0, 0, 0, 0, 0]);
 
   useEffect(() => {
+    const checkSession = async () => {
+      const sessionId = await AsyncStorage.getItem('session_token');
+      if (!sessionId) {
+        Alert.alert('Session Expired', 'Your session has expired. Please log in again.');
+        navigation.replace('SignIn');
+      }
+    };
+
     const fetchSalesData = async () => {
       setDailySales(5000);
       setMonthlySales(150000);
     };
+
     const fetchDailySales = async () => {
       const sales = [1200, 1000, 2500, 4000, 4500, 2000, 5000];
       setDailySalesData(sales);
     };
+
+    checkSession(); // Check if session exists on component mount
     fetchSalesData();
     fetchDailySales();
   }, []);
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://192.168.100.20/payment/admin/logout.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await AsyncStorage.removeItem('session_token');
+        Alert.alert('Success', 'Logged out successfully');
+        navigation.replace('Signin'); 
+      } else {
+        Alert.alert('Error', 'Failed to log out');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Search */}
+      {/* Header with Logout Button */}
       <View style={styles.header}>
         <View style={styles.headerBar}>
           <Text style={styles.headerText}>Dashboard</Text>
-          <Ionicons name="speedometer-outline" size={24} color="#fff"   style={styles.headerText} />
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.headerText} />
+          </TouchableOpacity>
         </View>
       </View>
 
