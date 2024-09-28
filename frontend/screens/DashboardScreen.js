@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { BarChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,25 +13,72 @@ const AdminDashboardScreen = ({ navigation }) => {
   const [dailySalesData, setDailySalesData] = useState([0, 0, 0, 0, 0, 0, 0]);
 
   useEffect(() => {
-    const fetchSalesData = async () => {
-      setDailySales(5000);
-      setMonthlySales(150000);
+    const checkSession = async () => {
+      const sessionId = await AsyncStorage.getItem('session_token');
+      if (!sessionId) {
+        Alert.alert('Session Expired', 'Your session has expired. Please log in again.');
+        navigation.replace('SignIn');
+      }
     };
-    const fetchDailySales = async () => {
-      const sales = [1200, 1000, 2500, 4000, 4500, 2000, 5000];
-      setDailySalesData(sales);
-    };
-    fetchSalesData();
-    fetchDailySales();
+
+    checkSession(); // Check if session exists on component mount
+    fetchSalesData(); // Fetch sales data on mount
   }, []);
+
+  const fetchSalesData = async () => {
+    try {
+      const response = await fetch('http://192.168.100.20/payment/admin/dashboard_cal.php', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setDailySales(data.today_sales);
+        setMonthlySales(data.month_sales);
+        setDailySalesData(data.daily_sales_data || []); // Safely set to an empty array if undefined
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch sales data');
+    }
+  };
+  
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('http://192.168.100.20/payment/admin/logout.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        await AsyncStorage.removeItem('session_token');
+        Alert.alert('Success', 'Logged out successfully');
+        navigation.replace('Signin'); 
+      } else {
+        Alert.alert('Error', 'Failed to log out');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Something went wrong. Please try again.');
+    }
+  };
+  
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Search */}
+      {/* Header with Logout Button */}
       <View style={styles.header}>
         <View style={styles.headerBar}>
           <Text style={styles.headerText}>Dashboard</Text>
-          <Ionicons name="speedometer-outline" size={24} color="#fff"   style={styles.headerText} />
+          <TouchableOpacity onPress={handleLogout}>
+            <Ionicons name="log-out-outline" size={24} color="#fff" style={styles.headerText} />
+          </TouchableOpacity>
         </View>
       </View>
 
@@ -38,25 +86,32 @@ const AdminDashboardScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.cardContainer}>
-          <View style={styles.card}>
-            <TouchableOpacity>
-              <View style={styles.cardBuild}>
-                <Text style={styles.cardTitle}>Sales Details </Text>
-                <Ionicons name="cash-outline" size={30} color="#333" />
-              </View>
-              <Text style={styles.cardValueText}>Kshs. <Text style={styles.cardValue}>{dailySales}</Text> </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.card}>
-            <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
-              <View style={styles.cardBuild}>
-                <Text style={styles.cardTitle}>Monthly Sales</Text>
-                <Ionicons name="calendar-outline" size={30} color="#333" />
-              </View>
-              <Text style={styles.cardValueText}>Kshs. <Text style={styles.cardValue}>{dailySales}</Text> </Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.card}>
+          <TouchableOpacity>
+            <View style={styles.cardBuild}>
+              <Text style={styles.cardTitle}>Today's Sales </Text>
+              <Ionicons name="cash-outline" size={30} color="#333" />
+            </View>
+            <Text style={styles.cardValueText}>
+              Kshs. <Text style={styles.cardValue}>{dailySales}</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
+        <View style={styles.card}>
+          <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
+            <View style={styles.cardBuild}>
+              <Text style={styles.cardTitle}>Monthly Sales</Text>
+              <Ionicons name="calendar-outline" size={30} color="#333" />
+            </View>
+            <Text style={styles.cardValueText}>
+              Kshs. <Text style={styles.cardValue}>{monthlySales}</Text> {/* Updated to display monthlySales */}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        </View>
+
+
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate("ManageInventory")}>
             <Ionicons name="swap-horizontal-outline" size={30} color="#333" style={styles.actionBtnIcons} />
@@ -123,6 +178,10 @@ const AdminDashboardScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={30} color="#333" />
           <Text style={styles.navText}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={fetchSalesData}>
+          <Ionicons name="refresh-outline" size={30} color="#333" />
+          <Text style={styles.navText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>

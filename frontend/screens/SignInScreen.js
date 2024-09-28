@@ -1,76 +1,106 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, Image, Linking } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
 
-const SignInScreen = ({ navigation }) => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+import React, { useState } from 'react'; 
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, SafeAreaView, ActivityIndicator, Image, Linking, Alert } from 'react-native'; 
+import { Ionicons } from '@expo/vector-icons'; 
+import AsyncStorage from '@react-native-async-storage/async-storage';  
 
-  const handleSignIn = () => {
-    if (email && password) {
-      console.log('Signing in...');
-    } else {
-      console.log('Please fill in both fields');
-    }
-  };
+const SignInScreen = ({ navigation }) => {   
+  const [email, setEmail] = useState('');   
+  const [password, setPassword] = useState('');   
+  const [loading, setLoading] = useState(false);
 
-  const handleCreateAccount = () => {
-    const url = 'http://funcorpdevelopers.netlify.app';
-    Linking.openURL(url)
-      .catch(error => console.error("Couldn't load the page", err));
-  };
+  const handleSignIn = async () => { 
+    if (!email || !password) { 
+      Alert.alert('Login Error', 'Please fill in all the fields');
+      return; 
+    } 
+    setLoading(true);
+    try {       
+      const response = await fetch('http://192.168.100.20/payment/admin/signin.php', {         
+        method: 'POST',         
+        headers: { 'Content-Type': 'application/json' },         
+        body: JSON.stringify({ email, password }),       
+      });        
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Logo */}
-      <View style={styles.logoContainer}>
-        <Image
-          source={require('../assets/logo.png')}
-          style={styles.logo}
-        />
-      </View>
+      const data = await response.json();       
+      setLoading(false);
+       
+      if (data.success) {         
+        // Store session token in AsyncStorage         
+        await AsyncStorage.setItem('session_token', data.sessionId);
+        Alert.alert('Success', 'Logged in successfully');         
+        navigation.replace('Dashboard');
+      } else {         
+        Alert.alert('Login Error', data.message || 'Invalid credentials');       
+      }     
+    } catch (error) {       
+      setLoading(false);
+      Alert.alert('Error', 'Something went wrong. Please try again.');     
+    }   
+  };    
 
-      <Text style={styles.title}>Welcome Back</Text>
-      <Text style={styles.subtitle}>Sign in to continue</Text>
+  const handleCreateAccount = () => {     
+    const url = 'http://funcorpdevelopers.netlify.app';     
+    Linking.openURL(url)       
+      .catch(error => console.error("Couldn't load the page", error));
+  };   
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="mail-outline" size={20} color="#555" />
-        <TextInput
-          style={styles.input}
-          placeholder="Email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-        />
-      </View>
+  return (     
+    <SafeAreaView style={styles.container}>       
+      {/* Logo */}       
+      <View style={styles.logoContainer}>         
+        <Image           
+          source={require('../assets/logo.png')}           
+          style={styles.logo}         
+        />       
+      </View>        
 
-      <View style={styles.inputContainer}>
-        <Ionicons name="lock-closed-outline" size={20} color="#555" />
-        <TextInput
-          style={styles.input}
-          placeholder="Password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-        />
-      </View>
+      <Text style={styles.title}>Welcome Back</Text>       
+      <Text style={styles.subtitle}>Sign in to continue</Text>        
 
-      <TouchableOpacity style={styles.signInButton} onPress={handleSignIn}>
-        <Text style={styles.signInButtonText}>Sign In</Text>
+      <View style={styles.inputContainer}>         
+        <Ionicons name="mail-outline" size={20} color="#555" />         
+        <TextInput           
+          style={styles.input}           
+          placeholder="Email"           
+          value={email}           
+          onChangeText={setEmail}           
+          keyboardType="email-address"         
+        />       
+      </View>        
+
+      <View style={styles.inputContainer}>         
+        <Ionicons name="lock-closed-outline" size={20} color="#555" />         
+        <TextInput           
+          style={styles.input}           
+          placeholder="Password"           
+          value={password}           
+          onChangeText={setPassword}           
+          secureTextEntry={true}         
+        />       
+      </View>        
+
+      <TouchableOpacity style={styles.signInButton} onPress={handleSignIn} disabled={loading}>
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <Text style={styles.signInButtonText}>Sign In</Text>         
+          
+        )}
         <Ionicons name="arrow-forward-circle-outline" size={24} color="#fff" />
-      </TouchableOpacity>
+      </TouchableOpacity>        
 
-      <TouchableOpacity style={styles.forgotPasswordButton} onPress={() => navigation.navigate("Reset")}>
-        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-      </TouchableOpacity>
+      <TouchableOpacity style={styles.forgotPasswordButton} onPress={() => navigation.navigate("Reset")}>         
+        <Text style={styles.forgotPasswordText}>Forgot Password?</Text>       
+      </TouchableOpacity>        
 
-      <View style={styles.signUpContainer}>
-      <TouchableOpacity onPress={handleCreateAccount} style={styles.createAccountButton}>
-        <Text style={styles.createAccountText}>Don't have an account? Create one</Text>
-      </TouchableOpacity>
-      </View>
-    </SafeAreaView>
-  );
+      <View style={styles.signUpContainer}>       
+        <TouchableOpacity onPress={handleCreateAccount} style={styles.createAccountButton}>         
+          <Text style={styles.createAccountText}>Don't have an account? Create one</Text>       
+        </TouchableOpacity>       
+      </View>     
+    </SafeAreaView>   
+  ); 
 };
 
 const styles = StyleSheet.create({
@@ -87,6 +117,7 @@ const styles = StyleSheet.create({
   logo: {
     width: 120,
     height: 120,
+    borderRadius: 60, 
     resizeMode: 'contain',
   },
   title: {
