@@ -21,20 +21,32 @@ const AdminDashboardScreen = ({ navigation }) => {
       }
     };
 
-    const fetchSalesData = async () => {
-      setDailySales(5000);
-      setMonthlySales(150000);
-    };
-
-    const fetchDailySales = async () => {
-      const sales = [1200, 1000, 2500, 4000, 4500, 2000, 5000];
-      setDailySalesData(sales);
-    };
-
     checkSession(); // Check if session exists on component mount
-    fetchSalesData();
-    fetchDailySales();
+    fetchSalesData(); // Fetch sales data on mount
   }, []);
+
+  const fetchSalesData = async () => {
+    try {
+      const response = await fetch('http://192.168.100.20/payment/admin/dashboard_cal.php', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setDailySales(data.today_sales);
+        setMonthlySales(data.month_sales);
+        setDailySalesData(data.daily_sales_data || []); // Safely set to an empty array if undefined
+      } else {
+        Alert.alert('Error', data.message);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to fetch sales data');
+    }
+  };
+  
 
   const handleLogout = async () => {
     try {
@@ -56,6 +68,7 @@ const AdminDashboardScreen = ({ navigation }) => {
       Alert.alert('Error', 'Something went wrong. Please try again.');
     }
   };
+  
 
   return (
     <SafeAreaView style={styles.container}>
@@ -73,25 +86,32 @@ const AdminDashboardScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.cardContainer}>
-          <View style={styles.card}>
-            <TouchableOpacity>
-              <View style={styles.cardBuild}>
-                <Text style={styles.cardTitle}>Sales Details </Text>
-                <Ionicons name="cash-outline" size={30} color="#333" />
-              </View>
-              <Text style={styles.cardValueText}>Kshs. <Text style={styles.cardValue}>{dailySales}</Text> </Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.card}>
-            <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
-              <View style={styles.cardBuild}>
-                <Text style={styles.cardTitle}>Monthly Sales</Text>
-                <Ionicons name="calendar-outline" size={30} color="#333" />
-              </View>
-              <Text style={styles.cardValueText}>Kshs. <Text style={styles.cardValue}>{dailySales}</Text> </Text>
-            </TouchableOpacity>
-          </View>
+        <View style={styles.card}>
+          <TouchableOpacity>
+            <View style={styles.cardBuild}>
+              <Text style={styles.cardTitle}>Today's Sales </Text>
+              <Ionicons name="cash-outline" size={30} color="#333" />
+            </View>
+            <Text style={styles.cardValueText}>
+              Kshs. <Text style={styles.cardValue}>{dailySales}</Text>
+            </Text>
+          </TouchableOpacity>
         </View>
+        <View style={styles.card}>
+          <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
+            <View style={styles.cardBuild}>
+              <Text style={styles.cardTitle}>Monthly Sales</Text>
+              <Ionicons name="calendar-outline" size={30} color="#333" />
+            </View>
+            <Text style={styles.cardValueText}>
+              Kshs. <Text style={styles.cardValue}>{monthlySales}</Text> {/* Updated to display monthlySales */}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        </View>
+
+
         <View style={styles.quickActionsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => navigation.navigate("ManageInventory")}>
             <Ionicons name="swap-horizontal-outline" size={30} color="#333" style={styles.actionBtnIcons} />
@@ -158,6 +178,10 @@ const AdminDashboardScreen = ({ navigation }) => {
         <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
           <Ionicons name="settings-outline" size={30} color="#333" />
           <Text style={styles.navText}>Settings</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={fetchSalesData}>
+          <Ionicons name="refresh-outline" size={30} color="#333" />
+          <Text style={styles.navText}>Refresh</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
