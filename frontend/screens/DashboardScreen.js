@@ -86,29 +86,28 @@ const AdminDashboardScreen = ({ navigation }) => {
       <ScrollView style={styles.scrollContainer}>
         <Text style={styles.sectionTitle}>Overview</Text>
         <View style={styles.cardContainer}>
-        <View style={styles.card}>
-          <TouchableOpacity>
-            <View style={styles.cardBuild}>
-              <Text style={styles.cardTitle}>Today's Sales </Text>
-              <Ionicons name="cash-outline" size={30} color="#333" />
-            </View>
-            <Text style={styles.cardValueText}>
-              Kshs. <Text style={styles.cardValue}>{dailySales}</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.card}>
-          <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
-            <View style={styles.cardBuild}>
-              <Text style={styles.cardTitle}>Monthly Sales</Text>
-              <Ionicons name="calendar-outline" size={30} color="#333" />
-            </View>
-            <Text style={styles.cardValueText}>
-              Kshs. <Text style={styles.cardValue}>{monthlySales}</Text> {/* Updated to display monthlySales */}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
+          <View style={styles.card}>
+            <TouchableOpacity>
+              <View style={styles.cardBuild}>
+                <Text style={styles.cardTitle}>Today's Sales </Text>
+                <Ionicons name="cash-outline" size={30} color="#333" />
+              </View>
+              <Text style={styles.cardValueText}>
+                Kshs. <Text style={styles.cardValue}>{dailySales}</Text>
+              </Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.card}>
+            <TouchableOpacity onPress={() => navigation.navigate('MonthlySales')}>
+              <View style={styles.cardBuild}>
+                <Text style={styles.cardTitle}>Monthly Sales</Text>
+                <Ionicons name="calendar-outline" size={30} color="#333" />
+              </View>
+              <Text style={styles.cardValueText}>
+                Kshs. <Text style={styles.cardValue}>{monthlySales}</Text> {/* Updated to display monthlySales */}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
 
