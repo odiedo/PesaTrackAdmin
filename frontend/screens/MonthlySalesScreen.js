@@ -1,76 +1,53 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Dimensions } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
-import { Picker } from '@react-native-picker/picker'; 
+import { Picker } from '@react-native-picker/picker';
+import { Ionicons } from '@expo/vector-icons';
 
 const screenWidth = Dimensions.get('window').width;
 
-const MonthlySalesScreen = () => {
-  const [weekData, setWeekData] = useState([
-    {
-      week: 'Week 1',
-      sales: [
-        { day: '1st', amount: 1000 },
-        { day: '2nd', amount: 1200 },
-        { day: '3rd', amount: 1400 },
-        { day: '4th', amount: 1600 },
-        { day: '5th', amount: 1500 },
-        { day: '6th', amount: 1700 },
-        { day: '7th', amount: 1300 },
-      ],
-    },
-    {
-      week: 'Week 2',
-      sales: [
-        { day: '8th', amount: 1100 },
-        { day: '9th', amount: 1150 },
-        { day: '10th', amount: 900 },
-        { day: '11th', amount: 1050 },
-        { day: '12th', amount: 1200 },
-        { day: '13th', amount: 1350 },
-        { day: '14th', amount: 1500 },
-      ],
-    },
-    {
-      week: 'Week 3',
-      sales: [
-        { day: '15th', amount: 1600 },
-        { day: '16th', amount: 1400 },
-        { day: '17th', amount: 1800 },
-        { day: '18th', amount: 1600 },
-        { day: '19th', amount: 1400 },
-        { day: '20th', amount: 2000 },
-        { day: '21st', amount: 1700 },
-      ],
-    },
-    {
-      week: 'Week 4',
-      sales: [
-        { day: '22nd', amount: 1800 },
-        { day: '23rd', amount: 1700 },
-        { day: '24th', amount: 1600 },
-        { day: '25th', amount: 1500 },
-        { day: '26th', amount: 1300 },
-        { day: '27th', amount: 1200 },
-        { day: '28th', amount: 1100 },
-      ],
-    },
-  ]);
-
-  const [selectedMonth, setSelectedMonth] = useState('September');
+const MonthlySalesScreen = ({ navigation }) => {
+  const [weekData, setWeekData] = useState([]);
+  const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedWeek, setSelectedWeek] = useState(null);
   const [isModalVisible, setModalVisible] = useState(false);
+  const [weeklySalesTotals, setWeeklySalesTotals] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Aggregate weekly data for BarChart
-  const weeklySalesTotals = weekData.map(week =>
-    week.sales.reduce((total, sale) => total + sale.amount, 0)
-  );
+  // Get the current month name
+  const getCurrentMonth = () => {
+    const currentDate = new Date();
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June', 'July',
+      'August', 'September', 'October', 'November', 'December'
+    ];
+    return monthNames[currentDate.getMonth()];
+  };
+
+  // Fetch sales data for the selected month
+  const fetchSalesData = async (month) => {
+    try {
+      const response = await fetch(`http://192.168.100.20/payment/admin/monthly_sales.php?month=${month}`);
+      const data = await response.json();
+      setWeekData(data.weekly_sales || []);
+      setWeeklySalesTotals(data.weekly_totals || []);
+      setLoading(false);
+    } catch (error) {
+      console.error(error);
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    const currentMonth = getCurrentMonth();
+    setSelectedMonth(currentMonth);
+    fetchSalesData(currentMonth);
+  }, []);
 
   const handleWeekClick = (week) => {
     setSelectedWeek(week);
     setModalVisible(true);
   };
-
 
   return (
     <View style={styles.container}>
@@ -80,90 +57,129 @@ const MonthlySalesScreen = () => {
         <Picker
           selectedValue={selectedMonth}
           style={styles.monthPicker}
-          onValueChange={(itemValue) => setSelectedMonth(itemValue)}
+          onValueChange={(itemValue) => {
+            setSelectedMonth(itemValue);
+            setLoading(true);
+            fetchSalesData(itemValue);
+          }}
         >
-          <Picker.Item label="September" value="September" />
-          <Picker.Item label="August" value="August" />
-          <Picker.Item label="July" value="July" />
-          {/* Add more months as needed */}
+          {['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'].map((month) => (
+            <Picker.Item label={month} value={month} key={month} />
+          ))}
         </Picker>
       </View>
 
-      {/* Title */}
       <Text style={styles.title}>Monthly Sales for {selectedMonth}</Text>
 
-      {/* BarChart for weekly sales */}
-      <BarChart
-        data={{
-          labels: weekData.map(week => week.week),
-          datasets: [
-            {
-              data: weeklySalesTotals,
-            },
-          ],
-        }}
-        width={screenWidth - 40} // Adjust for padding
-        height={250}
-        yAxisLabel="Kshs "
-        chartConfig={{
-          backgroundColor: '#f8f8f8',
-          backgroundGradientFrom: '#f8f8f8',
-          backgroundGradientTo: '#f8f8f8',
-          decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(26, 255, 146, ${opacity})`,
-          labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-          barPercentage: 0.6,
-        }}
-        verticalLabelRotation={30}
-        fromZero
-        style={{ borderRadius: 16, marginBottom: 20 }}
-      />
+      {!loading ? (
+        <>
+          {/* BarChart for weekly sales */}
+          <BarChart
+            data={{
+              labels: weekData.map(week => week.week),
+              datasets: [
+                {
+                  data: weeklySalesTotals.map(total => total || 0),
+                },
+              ],
+            }}
+            width={screenWidth - 40}
+            height={250}
+            yAxisLabel="Kshs "
+            chartConfig={{
+              backgroundColor: '#1cc910',
+              backgroundGradientFrom: '#eff3ff',
+              backgroundGradientTo: '#efefef',
+              decimalPlaces: 0,
+              color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              labelColor: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+              barPercentage: 0.6,
+            }}
+            verticalLabelRotation={30}
+            fromZero
+            style={{ borderRadius: 16, marginBottom: 20 }}
+          />
 
-      {/* List of weeks */}
-      {weekData.map((week, index) => (
-        <TouchableOpacity
-          key={index}
-          style={styles.weekItem}
-          onPress={() => handleWeekClick(week)}
-        >
-          <Text style={styles.weekText}>{week.week}</Text>
-          <Text style={styles.weekAmount}>Kshs {weeklySalesTotals[index].toLocaleString()}</Text>
-        </TouchableOpacity>
-      ))}
+          {/* List of weeks */}
+          {weekData.map((week, index) => (
+            <TouchableOpacity
+              key={index}
+              style={styles.weekItem}
+              onPress={() => handleWeekClick(week)}
+            >
+              <Text style={styles.weekText}>{week.week}</Text>
+              <Text style={styles.weekAmount}>
+                Kshs {weeklySalesTotals[index]?.toLocaleString() || '0'}
+              </Text>
+            </TouchableOpacity>
+          ))}
 
-      {/* Modal for showing selected week's day-wise sales */}
-      {selectedWeek && (
-        <Modal
-          visible={isModalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>{selectedWeek.week} Sales Breakdown</Text>
-              <ScrollView>
-                {selectedWeek.sales.map((sale, index) => (
-                  <View key={index} style={styles.modalItem}>
-                    <Text style={styles.day}>{sale.day}</Text>
-                    <Text style={styles.amount}>Kshs {sale.amount.toLocaleString()}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setModalVisible(false)}
-              >
-                <Text style={styles.closeButtonText}>Close</Text>
+          {/* Modal for selected week's day-wise sales */}
+          {selectedWeek && (
+            <Modal
+              visible={isModalVisible}
+              transparent={true}
+              animationType="slide"
+              onRequestClose={() => setModalVisible(false)}
+            >
+              <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                  <Text style={styles.modalTitle}>{selectedWeek.week} Sales Breakdown</Text>
+                  <ScrollView>
+                    {selectedWeek.sales.map((sale, index) => (
+                      <View key={index} style={styles.modalItem}>
+                        <Text style={styles.day}>{sale.day}</Text>
+                        <Text style={styles.amount}>
+                          Kshs {sale.amount?.toLocaleString() || '0'}
+                        </Text>
+                      </View>
+                    ))}
+                    <View style={styles.modalItem}>
+                      <Text style={styles.totalLabel}>Total: </Text>
+                      <Text style={styles.totalAmount}>
+                        Kshs {selectedWeek.total?.toLocaleString() || '0'}
+                      </Text>
+                    </View>
+                  </ScrollView>
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={() => setModalVisible(false)}
+                  >
+                    <Text style={styles.closeButtonText}>Close</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            </Modal>
+          )}
+            {/* Bottom Navigation Bar */}
+            <View style={styles.bottomNavigation}>
+              <TouchableOpacity onPress={() => navigation.navigate("Dashboard")}>
+                <Ionicons name="home" size={30} color="#333" />
+                <Text style={styles.navText}>Home</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('ManageInventory')}>
+                <Ionicons name="clipboard-outline" size={30} color="#333" />
+                <Text style={styles.navText}>Inventory</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('SalesAnalytics')}>
+                <Ionicons name="bar-chart-outline" size={30} color="#007aff" />
+                <Text style={styles.navText}>Sales</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate('Settings')}>
+                <Ionicons name="settings-outline" size={30} color="#333" />
+                <Text style={styles.navText}>Settings</Text>
               </TouchableOpacity>
             </View>
-          </View>
-        </Modal>
+        </>
+      ) : (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007bff" />
+          <Text style={styles.loadingText}>Loading data...</Text>
+        </View>
       )}
     </View>
   );
 };
-
 
 const styles = StyleSheet.create({
   container: {
@@ -215,7 +231,7 @@ const styles = StyleSheet.create({
   weekAmount: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#28a745',
+    color: '#007bff',
   },
   modalContainer: {
     flex: 1,
@@ -266,6 +282,49 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 18,
+    color: '#007bff',
+  },
+  totalLabel: {
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  totalAmount: {
+    fontWeight: 'bold',
+    fontSize: 16,
+    color: '#007bff',
+  },
+  bottomNavigation: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderTopColor: '#ccc',
+    borderTopWidth: 1,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 4,
+  },
+  navText: {
+    textAlign: 'center',
+    color: '#333',
+    fontSize: 12,
+  },
+  buttonGroup: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+    marginTop: 10,
   },
 });
 
