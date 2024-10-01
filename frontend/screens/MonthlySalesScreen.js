@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Modal, ScrollView, Dimensions, ActivityIndicator } from 'react-native';
 import { BarChart } from 'react-native-chart-kit';
 import { Picker } from '@react-native-picker/picker';
+import { Ionicons } from '@expo/vector-icons';
 
 const screenWidth = Dimensions.get('window').width;
 
-const MonthlySalesScreen = () => {
+const MonthlySalesScreen = ({ navigation }) => {
   const [weekData, setWeekData] = useState([]);
   const [selectedMonth, setSelectedMonth] = useState('');
   const [selectedWeek, setSelectedWeek] = useState(null);

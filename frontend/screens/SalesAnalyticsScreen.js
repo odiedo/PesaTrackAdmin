@@ -130,14 +130,14 @@ const DetailedReportScreen = ({ navigation }) => {
 
         {/* Sales Report Description */}
         <View style={styles.reportDescription}>
-          <Text style={styles.reportTitle}>
-            <Ionicons name="analytics-outline" size={24} color="#FF6347" /> Report Description:
-          </Text>
 
           {viewMode === 'daily' && (
             <View style={styles.descriptionCard}>
+              <Text style={styles.reportTitle}>
+              <Ionicons name="calendar-outline" size={20} color="#32CD32" /> Daily Sales:
+              </Text>
               <Text style={styles.reportText}>
-                <Ionicons name="calendar-outline" size={20} color="#1E90FF" />{' '}
+                {' '}
                 This bar chart shows the daily sales for the current week. These insights will help you monitor
                 day-to-day sales trends and identify peak sales days.
               </Text>
@@ -146,8 +146,11 @@ const DetailedReportScreen = ({ navigation }) => {
           
           {viewMode === 'weekly' && (
             <View style={styles.descriptionCard}>
+              <Text style={styles.reportTitle}>
+                <Ionicons name="calendar-number-outline" size={20} color="#32CD32" /> Weekly Sales:
+              </Text>
               <Text style={styles.reportText}>
-                <Ionicons name="calendar-number-outline" size={20} color="#32CD32" />{' '}
+                {' '}
                 This chart displays average weekly sales for the current month. Understanding weekly sales
                 fluctuations will help you identify consistent trends and plan accordingly.
               </Text>
@@ -156,8 +159,11 @@ const DetailedReportScreen = ({ navigation }) => {
           
           {viewMode === 'monthly' && (
             <View style={styles.descriptionCard}>
+              <Text style={styles.reportTitle}>
+                <Ionicons name="pie-chart-outline" size={20} color="#FF4500" /> Monthly Sales:
+              </Text>
               <Text style={styles.reportText}>
-                <Ionicons name="pie-chart-outline" size={20} color="#FF4500" />{' '}
+                {' '}
                 The chart represents quarterly sales for the year. Quarterly analysis enables you to assess
                 seasonal performance and adjust strategies to boost future sales.
               </Text>
